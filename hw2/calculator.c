@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
 	if (argc != 2) {
 		fprintf(stderr, "calculator needs exactly 1 argument, the input file\n");
-		return 1;
+
 	}
 	infile = fopen(argv[1], "r");
 	if (!infile) {
@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
 			op = buffer[0];
 		}	
 	}
-
 	remove_newline(buffer, BUFSIZE);
 	printf("%li\n", res);
 	return 0;

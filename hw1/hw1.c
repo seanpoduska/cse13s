@@ -18,19 +18,22 @@ int bigger_minus_smaller(int a, int b) {
 }
 
 bool value_in_range(int lower_bound, int x, int upper_bound) {
-  if (x >= lower_bound && x <= upper_bound){
+  if (x >= lower_bound && x <= upper_bound) {
   	return true;
-  }else{
+  } else {
 	return false;
   }
 }
 
 int sum_of_greater_squares(int a, int b, int c) {
-  if ((a * a) < (b * b) && (a * a) < (c * c)){
-	return ((b * b) + (c * c));
-  }else if ((b * b) < (a * a) && (b * b) < (c * c)){
-	return ((a * a) + (c * c));
-  }else{
-	return ((a * a) + (b * b));
-  }
+	int square_a = a * a;
+	int square_b = b * b;
+	int square_c = c * c;	
+	if (square_b <= square_a && square_b <= square_c) {
+		return square_a + square_c;
+	} else if (square_a <= square_b && square_b <= square_c) {
+		return square_b + square_c;
+	} else {
+		return square_a + square_b;
+	}
 }
