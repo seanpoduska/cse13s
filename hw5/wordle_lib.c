@@ -1,5 +1,8 @@
 #include "wordle_lib.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 // Most of the code that you're going to have to implement goes in here.
 // Feel free to add more helper functions if necessary.
 
@@ -84,25 +87,25 @@ bool valid_guess(char *guess, char **vocabulary, size_t num_words) {
 char **load_vocabulary(char *filename, size_t *num_words) {
   char **out = NULL;
   // TODO(you): finish this function
-	FILE *file = fopen(filename, size_t *num_words) {
-		if (!file) {
-			perror("Could not open vocabulary file");
-			return NULL;
-		}
+	FILE *file = fopen(filename, "r");
+	if (!file) {
+  	perror("Could not open vocabulary file");
+  	*num_words = 0;
+  	return NULL;
+	}
 
-	char **words = NULL;
 	*num_words = 0;
 	char buffer[120];
 
 	while (fgets(buffer, sizeof(buffer), file)) {
-		buffer[strcspn(buffer, "\n")] = '\0'; // removes newline
-		words = realloc(words, (*num_words + 1) ** sizeof(char *));
-		words[*num_words] = strdup(buffer);
+		buffer[strcspn(buffer, "\n")] = '\0';
+		out = realloc(out, (*num_words + 1) * sizeof(char *));
+		out[*num_words] = strdup(buffer);
 		(*num_words)++;
 	}
 	
 	fclose(file);
-	return words;
+	return out;
 }
 
 // Free each of the strings in the vocabulary, as well as the pointer vocabulary
