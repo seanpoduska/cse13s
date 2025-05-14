@@ -15,12 +15,42 @@
 //   5. (ie, at least 6 bytes long)
 bool score_guess(char *secret, char *guess, char *result) {
   // TODO(you): finish this function
+	bool matched_secret[5] = {false}; //flags to mark used letters in secret
+	bool matched_guess[5] = {false}; //flags to avoid double-counting in guess
 
-  UNUSED(secret);
-  UNUSED(guess);
-  UNUSED(result);
-
-  return false;
+	//check 1: mark correct position (green)
+	for (int i = 0; i < 5; i++) {
+		if (guess[i] == secret[i]) {
+			result[i] = 'g';
+			matched_secret[i] = true;
+			matched_guess[i] = true;
+		}
+	}
+	
+	//check 2: mark correct letters in wrong position (yellow)
+	for (int i = 0; i < 5; i++) {
+		if (matched_guess[i]) {
+			continue;
+		}
+		for (int j = 0; j < 5; j++) {
+			if (!matched_guess[j] && guess[i] == secret[j]) {
+				result[i] = 'y';
+				matched_secret[j] = true;
+				matched_guess[i] = true;
+				break;
+			}
+		}
+	}
+	
+	//check 3: mark rest as wrong (gray)
+	for (int i = 0; i < 5; i++) {
+		if (!matched_guess[i]) {
+			result[i] = 'x';
+		}
+	}
+	
+	//check 4: all correct (win)
+  return strcmp(secret, guess) == 0;
 }
 
 // Returns true if the specified guess is one of the strings in the vocabulary,
@@ -29,10 +59,11 @@ bool score_guess(char *secret, char *guess, char *result) {
 // but consider: could you do this search more quickly?
 bool valid_guess(char *guess, char **vocabulary, size_t num_words) {
   // TODO(you): finish this function
-  UNUSED(guess);
-  UNUSED(vocabulary);
-  UNUSED(num_words);
-
+	for (size_t i = 0; i < num_words; i++) {
+		if (strncmp(guess, vocabulary[i], 5) == 0) {
+			return true;
+		}
+	}
   return false;
 }
 
@@ -53,17 +84,33 @@ bool valid_guess(char *guess, char **vocabulary, size_t num_words) {
 char **load_vocabulary(char *filename, size_t *num_words) {
   char **out = NULL;
   // TODO(you): finish this function
+	FILE *file = fopen(filename, size_t *num_words) {
+		if (!file) {
+			perror("Could not open vocabulary file");
+			return NULL;
+		}
 
-  UNUSED(filename);
-  UNUSED(num_words);
+	char **words = NULL;
+	*num_words = 0;
+	char buffer[120];
 
-  return out;
+	while (fgets(buffer, sizeof(buffer), file)) {
+		buffer[strcspn(buffer, "\n")] = '\0'; // removes newline
+		words = realloc(words, (*num_words + 1) ** sizeof(char *));
+		words[*num_words] = strdup(buffer);
+		(*num_words)++;
+	}
+	
+	fclose(file);
+	return words;
 }
 
 // Free each of the strings in the vocabulary, as well as the pointer vocabulary
 // itself (which points to an array of char *).
 void free_vocabulary(char **vocabulary, size_t num_words) {
   // TODO(you): finish this function
-  UNUSED(vocabulary);
-  UNUSED(num_words);
+	for (size_t i = 0; i < num_words; i++) {
+		free(vocabulary[i]);
+	}
+	free(vocabulary);
 }
