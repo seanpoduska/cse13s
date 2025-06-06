@@ -225,7 +225,7 @@ void free_term_lookup_table(TermLookupTable *table) {
     TermLookupList *entry = table->buckets[i];
     while (entry) {
       TermLookupList *next = entry->next;
-      free_set(entry->message_ids);
+      free_set(entry->message_id_set);
       free(entry->term);
       free(entry);
       entry = next;
@@ -241,7 +241,7 @@ string_set *term_lookup(TermLookupTable *table, char *term) {
   TermLookupList *entry = table->buckets[hash];
   while (entry) {
     if (strcmp(entry->term, term) == 0) {
-      return entry->message_ids;
+      return entry->message_id_set;
     }
     entry = entry->next;
   }
@@ -252,7 +252,7 @@ string_set *union_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
   string_set *result = NULL;
   while (queries) {
-    string_set *term_set = term_lookup(table, queries->s);
+    string_set *term_set = term_lookup(table, queries->value);
     if (term_set) {
       result = set_union(result, term_set);
     }
@@ -265,7 +265,7 @@ string_set *intersection_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
   string_set *result = NULL;
   while (queries) {
-    string_set *term_set = term_lookup(table, queries->s);
+    string_set *term_set = term_lookup(table, queries->value);
     if (!term_set) return NULL;
     if (!result)
       result = set_union(NULL, term_set);  // make a copy
@@ -286,14 +286,14 @@ void add_message_id_to_term(TermLookupTable *table, char *term,
   TermLookupList *entry = table->buckets[hash];
   while (entry) {
     if (strcmp(entry->term, term) == 0) {
-      entry->message_ids = add(entry->message_ids, message_id);
+      entry->message_id_set = add(entry->message_id_set, message_id);
       return;
     }
     entry = entry->next;
   }
   TermLookupList *new_entry = malloc(sizeof(TermLookupList));
   new_entry->term = strdup(term);
-  new_entry->message_ids = add(NULL, message_id);
+  new_entry->message_id_set = add(NULL, message_id);
   new_entry->next = table->buckets[hash];
   table->buckets[hash] = new_entry;
 }
