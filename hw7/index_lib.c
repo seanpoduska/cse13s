@@ -38,14 +38,19 @@ void chomp(char *s) {
 // string utilities
 void lowercase(char *s) {
   // YOUR CODE HERE
-  UNUSED(s);
+  for (int i = 0; s[i]; i++) {
+    s[i] = tolower(s[i]);
+  }
 }
 
 bool startswith(char *longstring, char *prefix) {
   // YOUR CODE HERE
-  UNUSED(longstring);
-  UNUSED(prefix);
-  return false;
+  while (*prefix) {
+    if (*prefix != *longstring) return false;
+    prefix++;
+    longstring++;
+  }
+  return true;
 }
 
 PostMetadata *extract_metadata(char *filename) {
@@ -171,19 +176,38 @@ void free_post_metadata(PostMetadata *metadata) {
 
 void free_metadata_lookup_table(MetadataLookupTable *table) {
   // YOUR CODE HERE
-  UNUSED(table);
+  for (size_t i = 0; i < table->num_buckets; i++) {
+    MetadataLookupList *entry = table->buckets[i];
+    while (entry) {
+      MetadataLookupList *next = entry->next;
+      free_post_metadata(entry->metadata);
+      free(entry);
+      entry = next;
+    }
+  }
+  free(table->buckets);
+  free(table);
 }
 
 void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(metadata);
+  unsigned long hash = djb_hash(metadata->message_id) % table->num_buckets;
+  MetadataLookupList *new_entry = malloc(sizeof(MetadataLookupList));
+  new_entry->metadata = metadata;
+  new_entry->next = table->buckets[hash];
+  table->buckets[hash] = new_entry;
 }
 
 PostMetadata *metadata_lookup(MetadataLookupTable *table, char *message_id) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(message_id);
+  unsigned long hash = djb_hash(message_id) % table->num_buckets;
+  MetadataLookupList *entry = table->buckets[hash];
+  while (entry) {
+    if (strcmp(entry->metadata->message_id, message_id) == 0) {
+      return entry->metadata;
+    }
+    entry = entry->next;
+  }
   return NULL;
 }
 
@@ -197,34 +221,79 @@ TermLookupTable *build_term_lookup_table(size_t num_buckets) {
 
 void free_term_lookup_table(TermLookupTable *table) {
   // YOUR CODE HERE
-  UNUSED(table);
+  for (size_t i = 0; i < table->num_buckets; i++) {
+    TermLookupList *entry = table->buckets[i];
+    while (entry) {
+      TermLookupList *next = entry->next;
+      free_set(entry->message_ids);
+      free(entry->term);
+      free(entry);
+      entry = next;
+    }
+  }
+  free(table->buckets);
+  free(table);
 }
 
 string_set *term_lookup(TermLookupTable *table, char *term) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(term);
+  unsigned long hash = djb_hash(term) % table->num_buckets;
+  TermLookupList *entry = table->buckets[hash];
+  while (entry) {
+    if (strcmp(entry->term, term) == 0) {
+      return entry->message_ids;
+    }
+    entry = entry->next;
+  }
   return NULL;
 }
 
 string_set *union_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(queries);
-  return NULL;
+  string_set *result = NULL;
+  while (queries) {
+    string_set *term_set = term_lookup(table, queries->s);
+    if (term_set) {
+      result = set_union(result, term_set);
+    }
+    queries = queries->next;
+  }
+  return result;
 }
 
 string_set *intersection_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(queries);
-  return NULL;
+  string_set *result = NULL;
+  while (queries) {
+    string_set *term_set = term_lookup(table, queries->s);
+    if (!term_set) return NULL;
+    if (!result)
+      result = set_union(NULL, term_set);  // make a copy
+    else {
+      string_set *temp = set_intersection(result, term_set);
+      free_set(result);
+      result = temp;
+    }
+    queries = queries->next;
+  }
+  return result;
 }
 
 void add_message_id_to_term(TermLookupTable *table, char *term,
                             char *message_id) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(term);
-  UNUSED(message_id);
+  unsigned long hash = djb_hash(term) % table->num_buckets;
+  TermLookupList *entry = table->buckets[hash];
+  while (entry) {
+    if (strcmp(entry->term, term) == 0) {
+      entry->message_ids = add(entry->message_ids, message_id);
+      return;
+    }
+    entry = entry->next;
+  }
+  TermLookupList *new_entry = malloc(sizeof(TermLookupList));
+  new_entry->term = strdup(term);
+  new_entry->message_ids = add(NULL, message_id);
+  new_entry->next = table->buckets[hash];
+  table->buckets[hash] = new_entry;
 }
