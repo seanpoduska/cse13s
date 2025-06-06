@@ -71,14 +71,24 @@ PostMetadata *extract_metadata(char *filename) {
     } else if (startswith(buf, "Subject: ") && !result->subject) {
       result->subject = strdup(buf + strlen("Subject: "));
     } else if (startswith(buf, "Message-ID: ") && !result->message_id) {
-      result->message_id = strdup(buf + strlen("Message-ID: "));
+      char *id_start = buf + strlen("Message-ID: ");
+      if (strlen(id_start) > 0) {
+        result->message_id = strdup(id_start); // <-- This strdup is essential
+      }
     } else if (startswith(buf, "Newsgroups: ") && !result->newsgroups) {
       result->newsgroups = strdup(buf + strlen("Newsgroups: "));
     }
   }
-  result->filename = strdup(filename);
 
   fclose(infile);
+  result->filename = strdup(filename);
+
+  // Final check: if message_id is missing or corrupted, abort
+  if (!result->message_id || strlen(result->message_id) == 0) {
+    free_post_metadata(result);
+    return NULL;
+  }
+
   return result;
 }
 
@@ -191,6 +201,8 @@ void free_metadata_lookup_table(MetadataLookupTable *table) {
 
 void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   // YOUR CODE HERE
+  if (!table || !metadata || !metadata->message_id || strlen(metadata->message_id) == 0) return;
+
   unsigned long hash = djb_hash(metadata->message_id) % table->num_buckets;
   MetadataLookupList *new_entry = malloc(sizeof(MetadataLookupList));
   new_entry->metadata = metadata;
@@ -200,10 +212,18 @@ void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
 
 PostMetadata *metadata_lookup(MetadataLookupTable *table, char *message_id) {
   // YOUR CODE HERE
+  if (!table || !message_id) return NULL;
+
+  if ((uintptr_t) message_id < 4096 || strnlen(message_id, 1024) == 1024) {
+    fprintf(stderr, "Bad message_id pointer: %p\n", (void *) message_id);
+    return NULL;
+  }
+
   unsigned long hash = djb_hash(message_id) % table->num_buckets;
   MetadataLookupList *entry = table->buckets[hash];
   while (entry) {
-    if (strcmp(entry->metadata->message_id, message_id) == 0) {
+    if (entry->metadata && entry->metadata->message_id &&
+        strcmp(entry->metadata->message_id, message_id) == 0) {
       return entry->metadata;
     }
     entry = entry->next;
