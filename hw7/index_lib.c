@@ -214,8 +214,9 @@ PostMetadata *metadata_lookup(MetadataLookupTable *table, char *message_id) {
   // YOUR CODE HERE
   if (!table || !message_id) return NULL;
 
-  if ((uintptr_t) message_id < 4096 || strnlen(message_id, 1024) == 1024) {
-    fprintf(stderr, "Bad message_id pointer: %p\n", (void *) message_id);
+  // Check if message_id is a valid pointer and not garbage
+  if ((unsigned long) message_id < 4096 || strnlen(message_id, 1024) == 1024) {
+    fprintf(stderr, "Invalid or suspicious message_id pointer: %p\n", (void *)message_id);
     return NULL;
   }
 

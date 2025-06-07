@@ -57,6 +57,8 @@ int main(void) {
     printf("%s\n", here->value);
   }
   free_set(animal_fluffy_union);
+  free_set(animals);
+  free_set(fluffy);
   free_list(entries);
 
   return 0;
