@@ -38,19 +38,14 @@ void chomp(char *s) {
 // string utilities
 void lowercase(char *s) {
   // YOUR CODE HERE
-  for (int i = 0; s[i]; i++) {
-    s[i] = tolower(s[i]);
-  }
+  UNUSED(s);
 }
 
 bool startswith(char *longstring, char *prefix) {
   // YOUR CODE HERE
-  while (*prefix) {
-    if (*prefix != *longstring) return false;
-    prefix++;
-    longstring++;
-  }
-  return true;
+  UNUSED(longstring);
+  UNUSED(prefix);
+  return false;
 }
 
 PostMetadata *extract_metadata(char *filename) {
@@ -71,24 +66,14 @@ PostMetadata *extract_metadata(char *filename) {
     } else if (startswith(buf, "Subject: ") && !result->subject) {
       result->subject = strdup(buf + strlen("Subject: "));
     } else if (startswith(buf, "Message-ID: ") && !result->message_id) {
-      char *id_start = buf + strlen("Message-ID: ");
-      if (strlen(id_start) > 0) {
-        result->message_id = strdup(id_start); // <-- This strdup is essential
-      }
+      result->message_id = strdup(buf + strlen("Message-ID: "));
     } else if (startswith(buf, "Newsgroups: ") && !result->newsgroups) {
       result->newsgroups = strdup(buf + strlen("Newsgroups: "));
     }
   }
-
-  fclose(infile);
   result->filename = strdup(filename);
 
-  // Final check: if message_id is missing or corrupted, abort
-  if (!result->message_id || strlen(result->message_id) == 0) {
-    free_post_metadata(result);
-    return NULL;
-  }
-
+  fclose(infile);
   return result;
 }
 
@@ -186,49 +171,19 @@ void free_post_metadata(PostMetadata *metadata) {
 
 void free_metadata_lookup_table(MetadataLookupTable *table) {
   // YOUR CODE HERE
-  for (size_t i = 0; i < table->num_buckets; i++) {
-    MetadataLookupList *entry = table->buckets[i];
-    while (entry) {
-      MetadataLookupList *next = entry->next;
-      free_post_metadata(entry->metadata);
-      free(entry);
-      entry = next;
-    }
-  }
-  free(table->buckets);
-  free(table);
+  UNUSED(table);
 }
 
 void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   // YOUR CODE HERE
-  if (!table || !metadata || !metadata->message_id || strlen(metadata->message_id) == 0) return;
-
-  unsigned long hash = djb_hash(metadata->message_id) % table->num_buckets;
-  MetadataLookupList *new_entry = malloc(sizeof(MetadataLookupList));
-  new_entry->metadata = metadata;
-  new_entry->next = table->buckets[hash];
-  table->buckets[hash] = new_entry;
+  UNUSED(table);
+  UNUSED(metadata);
 }
 
 PostMetadata *metadata_lookup(MetadataLookupTable *table, char *message_id) {
   // YOUR CODE HERE
-  if (!table || !message_id) return NULL;
-
-  // Check if message_id is a valid pointer and not garbage
-  if ((unsigned long) message_id < 4096 || strnlen(message_id, 1024) == 1024) {
-    fprintf(stderr, "Invalid or suspicious message_id pointer: %p\n", (void *)message_id);
-    return NULL;
-  }
-
-  unsigned long hash = djb_hash(message_id) % table->num_buckets;
-  MetadataLookupList *entry = table->buckets[hash];
-  while (entry) {
-    if (entry->metadata && entry->metadata->message_id &&
-        strcmp(entry->metadata->message_id, message_id) == 0) {
-      return entry->metadata;
-    }
-    entry = entry->next;
-  }
+  UNUSED(table);
+  UNUSED(message_id);
   return NULL;
 }
 
@@ -242,79 +197,34 @@ TermLookupTable *build_term_lookup_table(size_t num_buckets) {
 
 void free_term_lookup_table(TermLookupTable *table) {
   // YOUR CODE HERE
-  for (size_t i = 0; i < table->num_buckets; i++) {
-    TermLookupList *entry = table->buckets[i];
-    while (entry) {
-      TermLookupList *next = entry->next;
-      free_set(entry->message_id_set);
-      free(entry->term);
-      free(entry);
-      entry = next;
-    }
-  }
-  free(table->buckets);
-  free(table);
+  UNUSED(table);
 }
 
 string_set *term_lookup(TermLookupTable *table, char *term) {
   // YOUR CODE HERE
-  unsigned long hash = djb_hash(term) % table->num_buckets;
-  TermLookupList *entry = table->buckets[hash];
-  while (entry) {
-    if (strcmp(entry->term, term) == 0) {
-      return entry->message_id_set;
-    }
-    entry = entry->next;
-  }
+  UNUSED(table);
+  UNUSED(term);
   return NULL;
 }
 
 string_set *union_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  string_set *result = NULL;
-  while (queries) {
-    string_set *term_set = term_lookup(table, queries->value);
-    if (term_set) {
-      result = set_union(result, term_set);
-    }
-    queries = queries->next;
-  }
-  return result;
+  UNUSED(table);
+  UNUSED(queries);
+  return NULL;
 }
 
 string_set *intersection_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  string_set *result = NULL;
-  while (queries) {
-    string_set *term_set = term_lookup(table, queries->value);
-    if (!term_set) return NULL;
-    if (!result)
-      result = set_union(NULL, term_set);  // make a copy
-    else {
-      string_set *temp = set_intersection(result, term_set);
-      free_set(result);
-      result = temp;
-    }
-    queries = queries->next;
-  }
-  return result;
+  UNUSED(table);
+  UNUSED(queries);
+  return NULL;
 }
 
 void add_message_id_to_term(TermLookupTable *table, char *term,
                             char *message_id) {
   // YOUR CODE HERE
-  unsigned long hash = djb_hash(term) % table->num_buckets;
-  TermLookupList *entry = table->buckets[hash];
-  while (entry) {
-    if (strcmp(entry->term, term) == 0) {
-      entry->message_id_set = add(entry->message_id_set, message_id);
-      return;
-    }
-    entry = entry->next;
-  }
-  TermLookupList *new_entry = malloc(sizeof(TermLookupList));
-  new_entry->term = strdup(term);
-  new_entry->message_id_set = add(NULL, message_id);
-  new_entry->next = table->buckets[hash];
-  table->buckets[hash] = new_entry;
+  UNUSED(table);
+  UNUSED(term);
+  UNUSED(message_id);
 }
