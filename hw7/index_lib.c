@@ -259,7 +259,9 @@ string_set *union_lookup(TermLookupTable *table, ll_string *queries) {
   string_set *result = make_empty_set();
   while (queries) {
     string_set *ids = term_lookup(table, queries->value);
-    result = set_union(result, ids);
+    if (ids) {
+      result = set_union(result, ids);
+    }
     queries = queries->next;
   }
   return result;
@@ -285,7 +287,7 @@ void add_message_id_to_term(TermLookupTable *table, char *term,
   TermLookupList *node = table->buckets[hash];
   while (node) {
     if (strcmp(node->term, term) == 0) {
-      node->message_id_set = add(node->message_id_set, message_id);
+      node->message_id_set = add(node->message_id_set, strdup(message_id));
       return;
     }
     node = node->next;
@@ -294,7 +296,7 @@ void add_message_id_to_term(TermLookupTable *table, char *term,
   TermLookupList *new_node = calloc(1, sizeof(TermLookupList));
   new_node->term = strdup(term);
   new_node->message_id_set = make_empty_set();
-  new_node->message_id_set = add(new_node->message_id_set, message_id);
+  new_node->message_id_set = add(new_node->message_id_set, strdup(message_id));
   new_node->next = table->buckets[hash];
   table->buckets[hash] = new_node;
 }
