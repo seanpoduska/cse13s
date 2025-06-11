@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <stdlib.h>
+
 void should_be_exactly_equal(const char *message, bool expected, bool actual) {
   printf("%s\n", message);
   printf("%s: wanted %d, got %d\n",
@@ -58,6 +60,8 @@ int main(void) {
   }
   free_set(animal_fluffy_union);
   free_list(entries);
+	free(animals);
+	free(fluffy);
 
   return 0;
 }

@@ -38,17 +38,22 @@ void chomp(char *s) {
 // string utilities
 void lowercase(char *s) {
   // YOUR CODE HERE
-  UNUSED(s);
+  for (int i = 0; s[i]; i++) {
+    s[i] = tolower((unsigned char)s[i]);
+  }
 }
 
 bool startswith(char *longstring, char *prefix) {
   // YOUR CODE HERE
-  UNUSED(longstring);
-  UNUSED(prefix);
-  return false;
+  while (*prefix) {
+    if (*prefix != *longstring) return false;
+    prefix++;
+    longstring++;
+  }
+  return true;
 }
 
-PostMetadata *extract_metadata(char *filename) {
+PostMetadata *extract_metadata(char *filename) {        // extracts metadata from database file (result)
   FILE *infile;
   infile = fopen(filename, "r");
   if (!infile) {
@@ -171,19 +176,46 @@ void free_post_metadata(PostMetadata *metadata) {
 
 void free_metadata_lookup_table(MetadataLookupTable *table) {
   // YOUR CODE HERE
-  UNUSED(table);
+  for (size_t i = 0; i < table->num_buckets; i++) {
+    MetadataLookupList *node = table->buckets[i];
+    while (node) {
+      MetadataLookupList *next = node->next;
+
+      free(node->message_id);                 // Free message_id string
+      free_post_metadata(node->metadata);     // Free PostMetadata struct
+      free(node);                             // Free the linked list node
+
+      node = next;                            // Move to next node
+    }
+  }
+
+  free(table->buckets);  // Free array of buckets
+  free(table);           // Free the table structure itself
 }
 
 void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(metadata);
+  if (!metadata || !metadata->message_id) return;
+
+  unsigned long hash = djb_hash(metadata->message_id) % table->num_buckets;
+
+  MetadataLookupList *new_node = calloc(1, sizeof(MetadataLookupList));
+  new_node->message_id = strdup(metadata->message_id);
+  new_node->metadata = metadata;
+  new_node->next = table->buckets[hash];
+  table->buckets[hash] = new_node;
 }
 
 PostMetadata *metadata_lookup(MetadataLookupTable *table, char *message_id) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(message_id);
+  unsigned long hash = djb_hash(message_id) % table->num_buckets;
+  MetadataLookupList *node = table->buckets[hash];
+  while (node) {
+    if (strcmp(node->message_id, message_id) == 0) {
+      return node->metadata;
+    }
+    node = node->next;
+  }
   return NULL;
 }
 
@@ -197,34 +229,72 @@ TermLookupTable *build_term_lookup_table(size_t num_buckets) {
 
 void free_term_lookup_table(TermLookupTable *table) {
   // YOUR CODE HERE
-  UNUSED(table);
+  for (size_t i = 0; i < table->num_buckets; i++) {
+    TermLookupList *node = table->buckets[i];
+    while (node) {
+      TermLookupList *next = node->next;
+      free(node->term);
+      free_set(node->message_id_set);
+      free(node);
+      node = next;
+    }
+  }
+  free(table->buckets);
+  free(table);
 }
 
 string_set *term_lookup(TermLookupTable *table, char *term) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(term);
+  unsigned long hash = djb_hash(term) % table->num_buckets;
+  TermLookupList *node = table->buckets[hash];
+  while (node) {
+    if (strcmp(node->term, term) == 0) return node->message_id_set;
+    node = node->next;
+  }
   return NULL;
 }
 
 string_set *union_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(queries);
-  return NULL;
+  string_set *result = make_empty_set();
+  while (queries) {
+    string_set *ids = term_lookup(table, queries->value);
+    result = set_union(result, ids);
+    queries = queries->next;
+  }
+  return result;
 }
 
 string_set *intersection_lookup(TermLookupTable *table, ll_string *queries) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(queries);
-  return NULL;
+  if (!queries) return make_empty_set();
+  string_set *result = term_lookup(table, queries->value);
+  queries = queries->next;
+  while (queries) {
+    string_set *ids = term_lookup(table, queries->value);
+    result = set_intersection(result, ids);
+    queries = queries->next;
+  }
+  return result;
 }
 
 void add_message_id_to_term(TermLookupTable *table, char *term,
                             char *message_id) {
   // YOUR CODE HERE
-  UNUSED(table);
-  UNUSED(term);
-  UNUSED(message_id);
+  unsigned long hash = djb_hash(term) % table->num_buckets;
+  TermLookupList *node = table->buckets[hash];
+  while (node) {
+    if (strcmp(node->term, term) == 0) {
+      node->message_id_set = add(node->message_id_set, message_id);
+      return;
+    }
+    node = node->next;
+  }
+
+  TermLookupList *new_node = calloc(1, sizeof(TermLookupList));
+  new_node->term = strdup(term);
+  new_node->message_id_set = make_empty_set();
+  new_node->message_id_set = add(new_node->message_id_set, message_id);
+  new_node->next = table->buckets[hash];
+  table->buckets[hash] = new_node;
 }
