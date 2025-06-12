@@ -9,7 +9,7 @@ string_set *make_empty_set(void) { return NULL; }
 
 bool contains(string_set *set, char *value) {
   // YOUR CODE HERE
-  if (set == NULL) return false;                         // base case: empty tree
+  if (set == NULL) return false;                        // base case: empty tree
   int cmp = strcmp(value, set->value);
   if (cmp == 0) return true;                            // match found
   else if (cmp < 0) return contains(set->left, value);  // search left
@@ -87,5 +87,4 @@ void free_set(string_set *set) {
   free(set->value);     // Free string
   free(set);            // Free node itself
 }
-
 

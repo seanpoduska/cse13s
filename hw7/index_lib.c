@@ -52,7 +52,7 @@ bool startswith(char *longstring, char *prefix) {
   return true;
 }
 
-PostMetadata *extract_metadata(char *filename) {        // extracts metadata from database file (result)
+PostMetadata *extract_metadata(char *filename) {  // extracts metadata from database file (result)
   FILE *infile;
   infile = fopen(filename, "r");
   if (!infile) {
@@ -200,7 +200,24 @@ void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
 
   MetadataLookupList *new_node = calloc(1, sizeof(MetadataLookupList));
   new_node->message_id = strdup(metadata->message_id);
+
+  // Performing code surgery, keep clear
+  // Original code: 
+  /*
   new_node->metadata = metadata;
+  */
+
+  // New code:
+  PostMetadata *copy = calloc(1, sizeof(PostMetadata));
+  copy->message_id = strdup(metadata->message_id);
+  copy->subject = strdup(metadata->subject);
+  copy->author = strdup(metadata->author);
+  copy->newsgroups = strdup(metadata->newsgroups);
+  copy->filename = metadata->filename ? strdup(metadata->filename) : NULL;
+
+  new_node->metadata = copy;
+  // End of changes
+
   new_node->next = table->buckets[hash];
   table->buckets[hash] = new_node;
 }
