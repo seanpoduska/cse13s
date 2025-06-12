@@ -87,3 +87,5 @@ void free_set(string_set *set) {
   free(set->value);     // Free string
   free(set);            // Free node itself
 }
+
+
