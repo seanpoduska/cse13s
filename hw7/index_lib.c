@@ -201,13 +201,11 @@ void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   MetadataLookupList *new_node = calloc(1, sizeof(MetadataLookupList));
   new_node->message_id = strdup(metadata->message_id);
 
-  // Performing code surgery, keep clear
-  // Original code: 
+  // Performing code surgery, keep clear 
   /*
   new_node->metadata = metadata;
   */
 
-  // New code:
   PostMetadata *copy = calloc(1, sizeof(PostMetadata));
   copy->message_id = strdup(metadata->message_id);
   copy->subject = strdup(metadata->subject);
@@ -216,7 +214,6 @@ void store_metadata(MetadataLookupTable *table, PostMetadata *metadata) {
   copy->filename = metadata->filename ? strdup(metadata->filename) : NULL;
 
   new_node->metadata = copy;
-  // End of changes
 
   new_node->next = table->buckets[hash];
   table->buckets[hash] = new_node;
